@@ -1,6 +1,6 @@
 from app import app
 from toolz.functoolz import pipe
-from flask import request, url_for, jsonify, Blueprint
+from flask import request, url_for, jsonify
 import json
 import requests
 from copy import copy
@@ -11,7 +11,6 @@ from webargs.flaskparser import use_args, use_kwargs
 from app.funcs import getZips, load_response, cr
 from app.presets import presets
 
-public_routes = Blueprint('public', __name__)
 
 user_args = {
     'zip' : fields.Int(required=True),
@@ -29,7 +28,7 @@ pdp_args = {
     "zip" : fields.Int(required=True)
 }
 
-@public_routes.route('/api/counties', methods=['GET'])
+@app.route('/api/counties', methods=['GET'])
 def counties():
     zip5 = request.args.get('zip',None)
 
@@ -40,7 +39,7 @@ def counties():
 
     return jsonify({'zip': None})
 
-@public_routes.route('/api/pdp', methods=['GET'])
+@app.route('/api/pdp', methods=['GET'])
 @use_args(pdp_args, location= "query")
 def pdp(args):
     try:
@@ -53,7 +52,7 @@ def pdp(args):
         return {'body' : None, 'error' : str(e)}
 
 
-@public_routes.route('/api/plans', methods=['GET'])
+@app.route('/api/plans', methods=['GET'])
 @use_args(user_args, location = "query")
 # rewrite in async
 def plans(args):
