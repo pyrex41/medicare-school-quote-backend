@@ -49,7 +49,7 @@ def pdp(args):
             'error': None
         }
     except Exception as e:
-        return {'body' : None, 'error' : str(e)}
+        return {'body' : [None], 'error' : str(e)}
 
 
 @app.route('/api/plans', methods=['GET'])
