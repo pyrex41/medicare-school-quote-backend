@@ -1,6 +1,6 @@
 from app import app
 from toolz.functoolz import pipe
-from flask import Flask, request, url_for, jsonify
+from flask import request, url_for, jsonify
 import json
 import requests
 from copy import copy
