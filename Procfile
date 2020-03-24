@@ -1,1 +1,1 @@
-web: gunicorn --certfile flask_app:application --log-file -
+web: gunicorn flask_app:application --log-file -
