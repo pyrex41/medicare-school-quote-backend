@@ -1,1 +1,1 @@
-web: gunicorn --certfile cert.pem --keyfile key.pem flask_app:application --log-file -
+web: gunicorn --certfile flask_app:application --log-file -
