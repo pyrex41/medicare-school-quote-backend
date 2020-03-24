@@ -11,9 +11,6 @@ from webargs.flaskparser import use_args, use_kwargs
 from app.funcs import getZips, load_response, cr
 from app.presets import presets
 
-#app = CORS(Flask(__name__))
-#CORS(app)
-
 user_args = {
     'zip' : fields.Int(required=True),
     'county': fields.Str(),
