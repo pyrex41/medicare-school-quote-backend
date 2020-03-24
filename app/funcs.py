@@ -1,9 +1,8 @@
-#from pymongo import MongoClient
 from copy import copy
 from csv import DictReader
 from toolz.functoolz import pipe
 
-from csg import format_rates, format_pdp, filter_quote, csgRequest
+from app.csg import format_rates, format_pdp, filter_quote, csgRequest
 from config import Config
 
 
