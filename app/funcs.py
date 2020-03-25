@@ -7,9 +7,8 @@ from config import Config
 
 
 api_key = Config.API_KEY
-token = Config.CSG_TOKEN
 
-cr = csgRequest(api_key, token=token)
+cr = csgRequest(api_key)
 
 def load_response(cr, query_data, naic=None, verbose=False):
     resp = cr.fetch_quote(**query_data)

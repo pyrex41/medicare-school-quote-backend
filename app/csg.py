@@ -51,16 +51,13 @@ def filter_quote(quote_resp, custom_naic=None, select=False, verbose=False):
                 return format_rates(fresp, 10)
 
 class csgRequest:
-    def __init__(self, api_key, token=None):
+    def __init__(self, api_key):
         self.uri = 'https://csgapi.appspot.com/v1/'
         self.api_key = api_key
-        if token:
-            self.token = token
-        else:
-            try:
-                self.set_token(self.parse_token('token.txt'))
-            except:
-                self.set_token()
+        try:
+            self.set_token(self.parse_token('token.txt'))
+        except:
+            self.set_token()
 
     def parse_token(self, file_name):
         parser = configparser.ConfigParser()
