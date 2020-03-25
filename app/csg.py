@@ -67,6 +67,15 @@ class csgRequest:
     def set_token(self, token=None):
         self.token = token if token else self.fetch_token()
 
+        try:
+            os.remove("token.txt")
+        except:
+            pass
+
+        with open("token.txt", "w+") as my_file:
+            my_file.write("[token-config]\n")
+            my_file.write("token={}".format(token))
+
     def GET_headers(self):
         return {
             'Content-Type': 'application/json',
@@ -82,14 +91,6 @@ class csgRequest:
         # add error handling if too many sessions
         token = jr['token']
 
-        try:
-            os.remove("token.txt")
-        except:
-            pass
-
-        with open("token.txt", "w+") as my_file:
-            my_file.write("[token-config]\n")
-            my_file.write("token={}".format(token))
 
         return token
 
