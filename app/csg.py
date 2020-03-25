@@ -3,6 +3,9 @@ from babel.numbers import format_currency as format_currency_verbose
 from datetime import datetime
 from toolz.functoolz import pipe
 from decimal import Decimal
+import os
+import configparser
+
 
 def format_currency(n):
     return format_currency_verbose(n, 'USD', locale='en_US')
@@ -51,7 +54,18 @@ class csgRequest:
     def __init__(self, api_key, token=None):
         self.uri = 'https://csgapi.appspot.com/v1/'
         self.api_key = api_key
-        self.token = None
+        if token:
+            self.token = token
+        else:
+            try:
+                self.set_token(self.parse_token('token.txt'))
+            except:
+                self.set_token()
+
+    def parse_token(self, file_name):
+        parser = configparser.ConfigParser()
+        parser.read('token.txt')
+        return parser.get('token-config', 'token')
 
     def set_token(self, token=None):
         self.token = token if token else self.fetch_token()
@@ -70,9 +84,20 @@ class csgRequest:
         jr = resp.json()
         # add error handling if too many sessions
         token = jr['token']
+
+        try:
+            os.remove("token.txt")
+        except:
+            pass
+
+        with open("token.txt", "w+") as my_file:
+            my_file.write("[token-config]\n")
+            my_file.write("token={}".format(token))
+
         return token
 
     def reset_token(self):
+        print('resetting token')
         self.set_token(token=None)
 
     def get(self, uri, params):
