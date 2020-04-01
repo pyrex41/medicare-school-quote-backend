@@ -63,12 +63,15 @@ def plans(args):
         x = qu.pop(a)
         qu[b] = x
 
-    def bool_int(a):
+    def bool_int(a, new_field_name = None):
         b = qu.pop(a)
-        qu[a] = 0 if b == False else 1
+        if new_field_name:
+            qu[new_field_name] = 0 if b == False else 1
+        else:
+            qu[a] = 0 if b == False else 1
 
     rename('zip', 'zip5')
-    bool_int('discounts')
+    bool_int('discounts', 'apply_discounts')
     bool_int('tobacco')
 
     preset_name = qu.get('preset', None)
@@ -85,8 +88,6 @@ def plans(args):
                 resp = cr.fetch_quote(**qu)
                 results[p] = filter_quote(resp, verbose=True)
                 #results[p] = load_response(cr, qu, naic=presets[preset_name], verbose=True)
-            else:
-                results[p] = None
         except Exception as e:
             results[p] = str(e)
 
