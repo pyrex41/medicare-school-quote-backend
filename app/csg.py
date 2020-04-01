@@ -12,24 +12,28 @@ def format_currency(n):
     return format_currency_verbose(n, 'USD', locale='en_US')
 
 def format_rates(quotes, max=-1):
-    d = {}
+    d = []
     for i,q in enumerate(quotes):
         rate = int(q['rate']['month'])
         naic = q['company_base']['naic']
-        company_name = q['company_base']['name'] + ' ---> ' + naic
+        company_name = q['company_base']['name']
         if q['select']:
             k = company_name + ' // Select'
         else:
             k = company_name
         #plan = q['plan']
-        d[k] = rate
-    slist = sorted(d.items(), key=lambda x:x[1])
+        d.append((k, rate, naic))
+    slist = sorted(d, key=lambda x:x[1])
     if max > 0:
         slist = slist[0:max]
-    dict = {}
-    for k,v in slist:
-        dict[k] = format_currency(v/100)
-    return dict
+    out_list = []
+    for k,v,n in slist:
+        out_list.append({
+            'company'   : k,
+            'rate'      : format_currency(v/100),
+            'naic'      : n
+        })
+    return out_list
 
 def format_pdp(pdp_results):
     out = []

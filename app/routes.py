@@ -82,9 +82,9 @@ def plans(args):
         try:
             if p in plans_:
                 qu['plan'] = p
-                #resp = cr.fetch_quote(**qu)
-                #results[p] = format_rates(resp)
-                results[p] = load_response(cr, qu, naic=presets[preset_name], verbose=True)
+                resp = cr.fetch_quote(**qu)
+                results[p] = filter_quote(resp, verbose=True)
+                #results[p] = load_response(cr, qu, naic=presets[preset_name], verbose=True)
             else:
                 results[p] = None
         except Exception as e:
