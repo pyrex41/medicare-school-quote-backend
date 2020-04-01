@@ -5,6 +5,7 @@ from toolz.functoolz import pipe
 from decimal import Decimal
 import os
 import configparser
+from collections import OrderedDict
 
 
 def format_currency(n):
@@ -14,7 +15,8 @@ def format_rates(quotes, max=-1):
     d = {}
     for i,q in enumerate(quotes):
         rate = int(q['rate']['month'])
-        company_name = q['company_base']['name']
+        naic = q['company_base']['naic']
+        company_name = q['company_base']['name'] + ' ---> ' + naic
         if q['select']:
             k = company_name + ' // Select'
         else:
@@ -24,7 +26,10 @@ def format_rates(quotes, max=-1):
     slist = sorted(d.items(), key=lambda x:x[1])
     if max > 0:
         slist = slist[0:max]
-    return {k: format_currency(v/100) for k,v in slist}
+    dict = {}
+    for k,v in slist:
+        dict[k] = format_currency(v/100)
+    return dict
 
 def format_pdp(pdp_results):
     out = []
@@ -74,7 +79,7 @@ class csgRequest:
 
         with open("token.txt", "w+") as my_file:
             my_file.write("[token-config]\n")
-            my_file.write("token={}".format(token))
+            my_file.write("token={}".format(self.token))
 
     def GET_headers(self):
         return {

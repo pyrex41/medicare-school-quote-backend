@@ -5,7 +5,8 @@ presets = {
         67369,  # Cigna
         47171, # Blue Cross Blue Shielf of Kansas City
         79143,  # AARP Medicare Supplement Plans, insured by UnitedHealthcare
-        71412 # Mutual of Omaha
+        71412, # Mutual of Omaha
+        75052, # AETNA
     ],
     'st_louis_mo': [
         79413,  # AARP Medicare Supplement Plans, insured by UnitedHealthcare

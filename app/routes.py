@@ -10,6 +10,7 @@ from webargs.flaskparser import use_args, use_kwargs
 
 from app.funcs import getZips, load_response, cr
 from app.presets import presets
+from app.csg import filter_quote, format_rates
 
 
 user_args = {
@@ -73,21 +74,23 @@ def plans(args):
     preset_name = qu.get('preset', None)
     if preset_name:
         qu.pop('preset')
+    #return json.dumps(qu)
     plans_ = qu.pop('plan')
-
 
     results = {}
     for p in ['N', 'F', 'G']:
         try:
             if p in plans_:
-                results[p] = load_response(cr, qu, naic=presets[preset_name], verbose=False)
+                qu['plan'] = p
+                #resp = cr.fetch_quote(**qu)
+                #results[p] = format_rates(resp)
+                results[p] = load_response(cr, qu, naic=presets[preset_name], verbose=True)
             else:
-                results[p] = {'body': None}
+                results[p] = None
         except Exception as e:
             results[p] = str(e)
 
     return jsonify(results)
-
 
 
 
