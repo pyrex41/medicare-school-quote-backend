@@ -8,7 +8,7 @@ from copy import copy
 from webargs import fields, validate
 from webargs.flaskparser import use_args, use_kwargs
 
-from app.funcs import getZips, load_response, cr
+from app.funcs import getZips, load_response_all, cr
 from app.presets import presets
 from app.csg import filter_quote, format_rates
 
@@ -77,7 +77,10 @@ def plans(args):
     preset_name = qu.get('preset', None)
     if preset_name:
         qu.pop('preset')
-    #return json.dumps(qu)
+
+    results = load_response_all(cr, qu, verbose=True)
+
+    '''
     plans_ = qu.pop('plan')
 
     results = {}
@@ -90,7 +93,7 @@ def plans(args):
                 #results[p] = load_response(cr, qu, naic=presets[preset_name], verbose=True)
         except Exception as e:
             results[p] = str(e)
-
+    '''
     return jsonify(results)
 
 

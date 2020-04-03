@@ -1,6 +1,7 @@
 from copy import copy
 from csv import DictReader
 from toolz.functoolz import pipe
+from flask import jsonify
 
 from app.csg import format_rates, format_pdp, filter_quote, csgRequest
 from config import Config
@@ -10,22 +11,42 @@ api_key = Config.API_KEY
 
 cr = csgRequest(api_key)
 
-def load_response(cr, query_data, naic=None, verbose=False):
+def load_response(cr, query_data, verbose=True):
     resp = cr.fetch_quote(**query_data)
-    try:
-        fq = filter_quote(resp, custom_naic=naic, select=False, verbose=verbose)
-        out_list = []
-        for k,v in fq.items():
-            out_list.append({
-                'company'   : k,
-                'rate'      : v
-            })
-        return {
-            'error' : None,
-            'body' : out_list
-        }
-    except Exception as e:
-        return {'error': str(e), 'body': resp}
+    return filter_quote(resp, verbose=verbose)
+
+def format_results(results):
+    row_dict = {}
+    for r in results:
+        for ol in r:
+            company = ol['company']
+            row = row_dict.get(company, {})
+            row[ol['plan']] = ol['rate']
+            row_dict[company] = row
+
+    rows = []
+    for c,d in row_dict.items():
+        row = {'company': c}
+        row['F Rate'] = d.get('F', None)
+        row['G Rate'] = d.get('G', None)
+        row['N Rate'] = d.get('N', None)
+        rows.append(row)
+    return rows
+
+def load_response_all(cr, query_data, verbose=True):
+
+    #tasks = []
+    results = []
+    plans_ = query_data.pop('plan')
+    for p in ['N', 'F', 'G']:
+        qu = copy(query_data)
+        if p in plans_:
+            qu['plan'] = p
+            results.append(load_response(cr, qu, verbose=True))
+
+    #results = await asyncio.gather(*tasks)
+
+    return format_results(results)
 
 class getZips():
     def __init__(self, file_name):
