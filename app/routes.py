@@ -78,7 +78,7 @@ def plans(args):
     if preset_name:
         qu.pop('preset')
 
-    results = load_response_all(cr, qu, verbose=True)
+    results = load_response_all(qu, verbose=True)
 
     '''
     plans_ = qu.pop('plan')

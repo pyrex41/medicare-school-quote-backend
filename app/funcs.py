@@ -6,12 +6,20 @@ from flask import jsonify
 from app.csg import format_rates, format_pdp, filter_quote, csgRequest
 from config import Config
 
+'''
+def my_filter(st, dic_list):
+    out = []
+    for d in dic_list:
+        if st.upper() in d['company'].upper():
+            out.append(d)
+    pprint(out)
+'''
+
 
 api_key = Config.API_KEY
-
 cr = csgRequest(api_key)
 
-def load_response(cr, query_data, verbose=True):
+def load_response(query_data, verbose=True):
     resp = cr.fetch_quote(**query_data)
     return filter_quote(resp, verbose=verbose)
 
@@ -22,6 +30,7 @@ def format_results(results):
             company = ol['company']
             row = row_dict.get(company, {})
             row[ol['plan']] = ol['rate']
+            row['naic'] = ol['naic']
             row_dict[company] = row
 
     rows = []
@@ -30,10 +39,11 @@ def format_results(results):
         row['F Rate'] = d.get('F', None)
         row['G Rate'] = d.get('G', None)
         row['N Rate'] = d.get('N', None)
+        row['naic'] = d.get('naic', None)
         rows.append(row)
     return rows
 
-def load_response_all(cr, query_data, verbose=True):
+def load_response_all(query_data, verbose=True):
 
     #tasks = []
     results = []
@@ -42,7 +52,7 @@ def load_response_all(cr, query_data, verbose=True):
         qu = copy(query_data)
         if p in plans_:
             qu['plan'] = p
-            results.append(load_response(cr, qu, verbose=True))
+            results.append(load_response(qu, verbose=True))
 
     #results = await asyncio.gather(*tasks)
 
