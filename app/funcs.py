@@ -39,7 +39,7 @@ def format_results(results):
         row['F Rate'] = d.get('F', None)
         row['G Rate'] = d.get('G', None)
         row['N Rate'] = d.get('N', None)
-        row['naic'] = d.get('naic', None)
+        row['naic'] = int(d.get('naic', None))
         rows.append(row)
     return rows
 
