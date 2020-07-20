@@ -26,7 +26,7 @@ def format_rates(quotes, household = False):
         qq =q['rating_class']
         if qq:
             has_h = 'household' in qq.lower()
-            kk = k + ' // ' + q['rating_class'] + ' ' +  str(has_h)
+            kk = k + ' // ' + q['rating_class'] + ' ' +  str(has_h) + ' ' + str(household)
         else:
             kk = k
         #plan = q['plan']
