@@ -19,10 +19,10 @@ def my_filter(st, dic_list):
 api_key = Config.API_KEY
 cr = csgRequest(api_key)
 
-def load_response(query_data, verbose=True):
+def load_response(query_data):
     resp = cr.fetch_quote(**query_data)
     household = True #query_data.get("apply_discounts", True)
-    return filter_quote(resp, household=household, verbose=verbose)
+    return filter_quote(resp, household=household)
 
 def format_results(results):
     row_dict = {}
@@ -53,7 +53,7 @@ def load_response_all(query_data, verbose=True):
         qu = copy(query_data)
         if p in plans_:
             qu['plan'] = p
-            results.append(load_response(qu, verbose=True))
+            results.append(load_response(qu))
 
     #results = await asyncio.gather(*tasks)
 

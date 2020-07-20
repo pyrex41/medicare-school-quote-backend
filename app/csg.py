@@ -60,17 +60,15 @@ def format_pdp(pdp_results):
         out.append(info)
     return out
 
-def filter_quote(quote_resp, household = False, custom_naic=None, select=False, verbose=False):
+def filter_quote(quote_resp, household = False, custom_naic=None, select=False):
         fresp = list(filter(lambda x: x['select'] == False, quote_resp)) if not select else quote_resp
-        if verbose:
-            return format_rates(fresp)
+
+        if custom_naic:
+            return pipe(
+                    list(filter(lambda x: int(x['company_base']['naic']) in custom_naic,fresp)),
+                    format_rates)
         else:
-            if custom_naic:
-                return pipe(
-                        list(filter(lambda x: int(x['company_base']['naic']) in custom_naic,fresp)),
-                        format_rates)
-            else:
-                return format_rates(fresp, household = household)
+            return format_rates(fresp, household = household)
 
 class csgRequest:
     def __init__(self, api_key):
