@@ -18,23 +18,25 @@ def format_rates(quotes, household = False):
         naic = q['company_base']['naic']
         company_name = q['company_base']['name']
         plan = q['plan']
-        has_h = 'household' in kk.lower()
+
         if q['select']:
             k = company_name + ' // Select'
         else:
             k = company_name
-        if q['rating_class']:
+        qq =q['rating_class']
+        if qq:
+            has_h = 'household' in qq.lower()
             kk = k + ' // ' + q['rating_class'] + ' ' +  str(has_h)
         else:
             kk = k
         #plan = q['plan']
 
 
-        if naic == '79413':
-            if household == has_h:
-                d.append((kk, rate, naic))
-        else:
-            d.append((kk, rate, naic))
+        #if naic == '79413':
+        #    if household == has_h:
+        #        d.append((kk, rate, naic))
+        #else:
+        d.append((kk, rate, naic))
     slist = sorted(d, key=lambda x: x[1])
     out_list = []
     for k,v,n in slist:
