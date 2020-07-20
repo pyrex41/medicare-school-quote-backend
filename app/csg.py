@@ -29,7 +29,7 @@ def format_rates(quotes, household = False):
         #plan = q['plan']
         has_h = 'household' in kk.lower()
 
-        if naic == 79413:
+        if naic == '79413':
             if has_h == household:
                 d.append((kk, rate, naic))
         else:
