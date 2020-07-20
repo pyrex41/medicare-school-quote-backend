@@ -21,7 +21,7 @@ cr = csgRequest(api_key)
 
 def load_response(query_data, verbose=True):
     resp = cr.fetch_quote(**query_data)
-    household = query_data.get("apply_discounts", False)
+    household = query_data.get("apply_discounts", True)
     return filter_quote(resp, household=household, verbose=verbose)
 
 def format_results(results):
