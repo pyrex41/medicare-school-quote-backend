@@ -11,7 +11,7 @@ from collections import OrderedDict
 def format_currency(n):
     return format_currency_verbose(n, 'USD', locale='en_US')
 
-def format_rates(quotes):
+def format_rates(quotes, household = False):
     d = []
     for i,q in enumerate(quotes):
         rate = int(q['rate']['month'])
@@ -27,7 +27,13 @@ def format_rates(quotes):
         else:
             kk = k
         #plan = q['plan']
-        d.append((kk, rate, naic))
+        has_h = 'household' in kk.lower()
+
+        if naic == 79413:
+            if has_h == household:
+                d.append((kk, rate, naic))
+        else:
+            d.append((kk, rate, naic))
     slist = sorted(d, key=lambda x: x[1])
     out_list = []
     for k,v,n in slist:
@@ -61,8 +67,7 @@ def filter_quote(quote_resp, household = False, custom_naic=None, select=False, 
                         list(filter(lambda x: int(x['company_base']['naic']) in custom_naic,fresp)),
                         format_rates)
             else:
-                r_init = format_rates(fresp)
-                return list(filter(lambda x: 'household' not in x['company'].lower(), r_init))
+                return format_rates(fresp, household = household)
 
 class csgRequest:
     def __init__(self, api_key):
