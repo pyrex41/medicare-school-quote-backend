@@ -11,7 +11,7 @@ from collections import OrderedDict
 def format_currency(n):
     return format_currency_verbose(n, 'USD', locale='en_US')
 
-def format_rates(quotes, max=-1):
+def format_rates(quotes):
     d = []
     for i,q in enumerate(quotes):
         rate = int(q['rate']['month'])
@@ -22,11 +22,13 @@ def format_rates(quotes, max=-1):
             k = company_name + ' // Select'
         else:
             k = company_name
+        if q['rating_class']:
+            kk = k + ' // ' + q['rating_class']
+        else:
+            kk = k
         #plan = q['plan']
-        d.append((k, rate, naic))
-    slist = sorted(d, key=lambda x:x[1])
-    if max > 0:
-        slist = slist[0:max]
+        d.append((kk, rate, naic))
+    slist = sorted(d, key=lambda x: x[1])
     out_list = []
     for k,v,n in slist:
         out_list.append({
@@ -49,7 +51,7 @@ def format_pdp(pdp_results):
         out.append(info)
     return out
 
-def filter_quote(quote_resp, custom_naic=None, select=False, verbose=False):
+def filter_quote(quote_resp, household = False, custom_naic=None, select=False, verbose=False):
         fresp = list(filter(lambda x: x['select'] == False, quote_resp)) if not select else quote_resp
         if verbose:
             return format_rates(fresp)
@@ -59,7 +61,8 @@ def filter_quote(quote_resp, custom_naic=None, select=False, verbose=False):
                         list(filter(lambda x: int(x['company_base']['naic']) in custom_naic,fresp)),
                         format_rates)
             else:
-                return format_rates(fresp, 10)
+                r_init = format_rates(fresp)
+                return list(filter(lambda x: 'household' not in x['company'].lower(), r_init))
 
 class csgRequest:
     def __init__(self, api_key):
