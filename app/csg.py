@@ -42,7 +42,11 @@ def format_rates(quotes, household = False):
             if bool(household) == has_h:
                 d.append((kk, rate, naic))
         else:
-            d.append((kk, rate, naic))
+            if has_h:
+                if bool(household) == has_h:
+                    d.append((kk, rate, naic))
+            else:
+                d.append((kk, rate, naic))
 
     slist = sorted(d, key=lambda x: x[1])
     out_list = []
