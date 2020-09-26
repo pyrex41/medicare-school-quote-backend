@@ -60,9 +60,9 @@ def pdp(args):
 def plans(args):
     qu = copy(args)
 
-    def rename(a,b):
+    def zip5_convert(a,b):
         x = qu.pop(a)
-        qu[b] = x
+        qu[b] = str(x).zfill(5)
 
     def bool_int(a, new_field_name = None):
         b = qu.pop(a)
@@ -71,7 +71,7 @@ def plans(args):
         else:
             qu[a] = 0 if b == False else 1
 
-    rename('zip', 'zip5')
+    zip5_convert('zip', 'zip5')
     bool_int('discounts', 'apply_discounts')
     bool_int('tobacco')
 
