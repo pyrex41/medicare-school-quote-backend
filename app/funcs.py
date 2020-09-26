@@ -15,7 +15,6 @@ def my_filter(st, dic_list):
     pprint(out)
 '''
 
-
 api_key = Config.API_KEY
 cr = csgRequest(api_key)
 
@@ -53,7 +52,7 @@ def load_response_all(query_data, verbose=True):
         qu = copy(query_data)
         if p in plans_:
             qu['plan'] = p
-            results.append(load_response(qu))
+            results.append(load_response(cr, qu))
 
     #results = await asyncio.gather(*tasks)
 

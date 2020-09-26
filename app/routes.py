@@ -44,7 +44,8 @@ def counties():
 @use_args(pdp_args, location= "query")
 def pdp(args):
     try:
-        resp = cr.fetch_pdp(args['zip'])
+        zip_str = str(args['zip']).zfill(5)
+        resp = cr.fetch_pdp(zip_str)
         return {
             'body': resp,
             'error': None
