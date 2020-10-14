@@ -71,10 +71,11 @@ def format_pdp(pdp_results, year):
     out = []
     for pdpr in pdp_results:
         info = {
-            'Plan Name': '{} - {}'.format(pdpr['plan_name'], str(year)),
+            'Plan Name': pdpr['plan_name'],
             'Plan Type': pdpr['plan_type'],
             'State': pdpr['state'],
-            'rate': format_currency(pdpr['month_rate']/100)
+            'rate': format_currency(pdpr['month_rate']/100),
+            'year': year
         }
         out.append(info)
     return out
