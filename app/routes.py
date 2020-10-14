@@ -4,6 +4,7 @@ from flask import request, url_for, jsonify
 import json
 import requests
 from copy import copy
+from datetime import datetime
 
 from webargs import fields, validate
 from webargs.flaskparser import use_args, use_kwargs
@@ -26,7 +27,8 @@ user_args = {
 }
 
 pdp_args = {
-    "zip" : fields.Int(required=True)
+    "zip" : fields.Int(required=True),
+    "effective_date" : fields.Int(missing=2021, validate = lambda x: x >= datetime.now().year)
 }
 
 @app.route('/api/counties', methods=['GET'])
@@ -44,8 +46,9 @@ def counties():
 @use_args(pdp_args, location= "query")
 def pdp(args):
     try:
+        effective_date = args['effective_date']
         zip5 = str(args['zip']).zfill(5)
-        resp = cr.fetch_pdp(zip5)
+        resp = cr.fetch_pdp(zip5, effective_date)
         return {
             'body': resp,
             'error': None

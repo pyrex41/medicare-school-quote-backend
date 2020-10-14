@@ -145,13 +145,15 @@ class csgRequest:
             return requests.get(uri, params=params, headers=self.GET_headers())
         return resp
 
-    def _fetch_pdp(self, zip5):
+    def _fetch_pdp(self, zip5, effective_date):
         ep = 'medicare_advantage/quotes.json'
+        '''
         effective_date = pipe(
             datetime.now(),
             lambda x: x.year,
             str,
         )
+        '''
         payload = {
             'zip5': zip5,
             'plan': 'pdp',
@@ -160,8 +162,9 @@ class csgRequest:
         resp = self.get(self.uri + ep, params=payload)
         return resp
 
-    def fetch_pdp(self, zip5):
-        return pipe(zip5, self._fetch_pdp, lambda x: x.json(), format_pdp)
+    def fetch_pdp(self, zip5, effective_date):
+        resp = self._fetch_pdp(zip5, str(effective_date))
+        return pipe(resp, lambda x: x.json(), format_pdp)
 
     def fetch_quote(self, **kwargs):
         acceptable_args = [
