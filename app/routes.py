@@ -28,7 +28,8 @@ user_args = {
 
 pdp_args = {
     "zip" : fields.Int(required=True),
-    "effective_date" : fields.Int(missing=2021, validate = lambda x: x >= datetime.now().year)
+    "year1" : fields.Int(missing=datetime.now().year, validate = lambda x: x >= datetime.now().year),
+    "year2" : fields.Int(missing=datetime.now().year + 1, validate = lambda x: x >= datetime.now().year + 1)
 }
 
 @app.route('/api/counties', methods=['GET'])
@@ -46,9 +47,10 @@ def counties():
 @use_args(pdp_args, location= "query")
 def pdp(args):
     try:
-        effective_date = args['effective_date']
+        year1 = args['year1']
+        year2 = args['year2']
         zip5 = str(args['zip']).zfill(5)
-        resp = cr.fetch_pdp(zip5, effective_date)
+        resp = cr.fetch_pdp(zip5, year1, year2)
         return {
             'body': resp,
             'error': None

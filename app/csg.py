@@ -67,11 +67,11 @@ def format_rates(quotes, household = False):
         })
     return out_list
 
-def format_pdp(pdp_results):
+def format_pdp(pdp_results, year):
     out = []
     for pdpr in pdp_results:
         info = {
-            'Plan Name': pdpr['plan_name'],
+            'Plan Name': '{} - {}'.format(pdpr['plan_name'], str(year)),
             'Plan Type': pdpr['plan_type'],
             'State': pdpr['state'],
             'rate': format_currency(pdpr['month_rate']/100)
@@ -162,9 +162,12 @@ class csgRequest:
         resp = self.get(self.uri + ep, params=payload)
         return resp
 
-    def fetch_pdp(self, zip5, effective_date):
-        resp = self._fetch_pdp(zip5, str(effective_date))
-        return pipe(resp, lambda x: x.json(), format_pdp)
+    def fetch_pdp(self, zip5, year1, year2):
+        resp1 = self._fetch_pdp(zip5, str(year1)).json()
+        resp2 = self._fetch_pdp(zip5, str(year2)).json()
+        fresp1 = format_pdp(resp1, year1)
+        fresp2 = format_pdp(resp2, year2)
+        return fresp1 + fresp2
 
     def fetch_quote(self, **kwargs):
         acceptable_args = [
