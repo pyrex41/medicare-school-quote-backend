@@ -85,7 +85,7 @@ def plans(args):
         qu.pop('preset')
 
     results = load_response_all(qu, verbose=True)
-    results['args'] = qu
+    #results['args'] = qu
 
 
     '''
