@@ -85,6 +85,9 @@ def plans(args):
     if preset_name:
         qu.pop('preset')
 
+    dt = qu.pop('date')
+    qu['effective_date'] = dt
+
     results = load_response_all(qu, verbose=True)
     #results['args'] = qu
 
@@ -103,7 +106,7 @@ def plans(args):
         except Exception as e:
             results[p] = str(e)
     '''
-    return jsonify(qu)
+    return jsonify(results)
 
 
 
