@@ -23,7 +23,8 @@ user_args = {
     'discounts' : fields.Bool(required=True),
     'date' : fields.Str(required=True),
     'plan' : fields.List(fields.Str(), required=True),
-    'preset' : fields.Str(missing='top_ten')
+    'preset' : fields.Str(missing='top_ten'),
+    'naic': fields.List(fields.Str(), required=False)
 }
 
 pdp_args = {
