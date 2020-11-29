@@ -85,6 +85,7 @@ def plans(args):
         qu.pop('preset')
 
     results = load_response_all(qu, verbose=True)
+    results['args'] = qu
 
 
     '''
@@ -101,7 +102,7 @@ def plans(args):
         except Exception as e:
             results[p] = str(e)
     '''
-    return jsonify(qu)
+    return jsonify(results)
 
 
 
