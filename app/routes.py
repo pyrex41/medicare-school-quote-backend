@@ -103,7 +103,7 @@ def plans(args):
         except Exception as e:
             results[p] = str(e)
     '''
-    return jsonify(results)
+    return jsonify(qu)
 
 
 
