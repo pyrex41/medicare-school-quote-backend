@@ -144,7 +144,17 @@ class csgRequest:
         if resp.status_code == 403:
             self.reset_token()
             return requests.get(uri, params=params, headers=self.GET_headers())
-        return resp
+        elif resp.status_code == 400:
+            # Adding this to deal with situation where county name is malformed.
+            # May not properly address hypothetical situation where there are different
+            # prices intra-zip code based on county.
+            try:
+                params.pop('county')
+                return requests.get(uri, params=params, headers=self.GET_headers())
+            except:
+                return resp
+        else:
+            return resp
 
     def _fetch_pdp(self, zip5, effective_date):
         ep = 'medicare_advantage/quotes.json'
