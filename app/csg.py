@@ -1,6 +1,6 @@
 import requests, json
 from babel.numbers import format_currency as format_currency_verbose
-from datetime import datetime
+from datetime import datetime, timedelta
 from toolz.functoolz import pipe
 from decimal import Decimal
 import os
@@ -174,8 +174,14 @@ class csgRequest:
         return resp
 
     def fetch_pdp(self, zip5, year1, year2):
-        resp1 = self._fetch_pdp(zip5, str(year1)).json()
-        resp2 = self._fetch_pdp(zip5, str(year2)).json()
+        now_trim = datetime.replace(datetime.now(), microsecond=0, minute=0, second=0, hour=0) + timedelta(days=1)
+        _r1 = datetime(year1, 1, 1, 0, 0)
+        year1 = max(now_trim, _r1)
+        y1 = year1.strftime("%Y-%m-%dT%H:%M:%S")
+        year2 = datetime(year2, 1, 1, 0, 0)
+        y2 = year2.strftime("%Y-%m-%dT%H:%M:%S")
+        resp1 = self._fetch_pdp(zip5, y1).json()
+        resp2 = self._fetch_pdp(zip5, y2).json()
         fresp1 = format_pdp(resp1, year1)
         fresp2 = format_pdp(resp2, year2)
         return fresp1 + fresp2
