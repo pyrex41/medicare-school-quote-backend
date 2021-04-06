@@ -75,7 +75,7 @@ def format_pdp(pdp_results, year):
             'Plan Type': pdpr['plan_type'],
             'State': pdpr['state'],
             'rate': format_currency(pdpr['month_rate']/100),
-            'year': year.strftime("%Y")
+            'year': int(year.strftime("%Y"))
         }
         out.append(info)
     return out
