@@ -67,18 +67,25 @@ def format_rates(quotes, household = False):
         })
     return out_list
 
-def format_pdp(pdp_results, year):
+def format_pdp(pdp_results, *_years):
     out = []
+    years = list(_years)
+    if len(years) == 0:
+        years.append(datetime.today().year)
     for pdpr in pdp_results:
+        dt_format = "%Y-%m-%dT%H:%M:%SZ"
+        st_dt = pdpr['effective_date']
+        dt = datetime.strptime(st_dt, dt_format)
         info = {
             'Plan Name': pdpr['plan_name'],
             'Plan Type': pdpr['plan_type'],
             'State': pdpr['state'],
             'rate': format_currency(pdpr['month_rate']/100),
-            'year': int(year.strftime("%Y"))
+            'year': dt.year
         }
         out.append(info)
-    return out
+    fout = filter(lambda x: x['year'] in years, out)
+    return list(fout)
 
 def filter_quote(quote_resp, household = False, custom_naic=None, select=False):
         fresp = list(filter(lambda x: x['select'] == False, quote_resp)) if not select else quote_resp
@@ -156,35 +163,19 @@ class csgRequest:
         else:
             return resp
 
-    def _fetch_pdp(self, zip5, effective_date):
+    def _fetch_pdp(self, zip5):
         ep = 'medicare_advantage/quotes.json'
-        '''
-        effective_date = pipe(
-            datetime.now(),
-            lambda x: x.year,
-            str,
-        )
-        '''
         payload = {
             'zip5': zip5,
             'plan': 'pdp',
-            'effective_date': effective_date
         }
         resp = self.get(self.uri + ep, params=payload)
         return resp
 
-    def fetch_pdp(self, zip5, year1, year2):
-        now_trim = datetime.replace(datetime.now(), microsecond=0, minute=0, second=0, hour=0) + timedelta(days=1)
-        _r1 = datetime(year1, 1, 1, 0, 0)
-        year1 = max(now_trim, _r1)
-        y1 = year1.strftime("%Y-%m-%dT%H:%M:%S")
-        year2 = datetime(year2, 1, 1, 0, 0)
-        y2 = year2.strftime("%Y-%m-%dT%H:%M:%S")
-        resp1 = self._fetch_pdp(zip5, y1).json()
-        resp2 = self._fetch_pdp(zip5, y2).json()
-        fresp1 = format_pdp(resp1, year1)
-        fresp2 = format_pdp(resp2, year2)
-        return fresp1 + fresp2
+    def fetch_pdp(self, zip5, *years):
+        resp = self._fetch_pdp(zip5).json()
+        fresp = format_pdp(resp, *years)
+        return fresp
 
     def fetch_quote(self, **kwargs):
         acceptable_args = [
