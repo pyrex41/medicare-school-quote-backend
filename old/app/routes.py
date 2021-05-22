@@ -1,18 +1,19 @@
 from app import app
-from toolz.functoolz import pipe
-from flask import request, url_for, jsonify
-import json
-import requests
+from flask import request, jsonify
 from copy import copy
 from datetime import datetime
 
-from webargs import fields, validate
-from webargs.flaskparser import use_args, use_kwargs
+from webargs import fields
+from webargs.flaskparser import use_args
 
-from app.funcs import getZips, load_response_all, cr
-from app.presets import presets
-from app.csg import filter_quote, format_rates
+from app.funcs import load_response_all
+from app.csg import csgRequest
+from app.zips import zipHolder
+from config import Config
 
+
+api_key = Config.API_KEY
+cr = csgRequest(api_key)
 
 user_args = {
     'zip' : fields.Int(required=True),
@@ -38,7 +39,7 @@ def counties():
     zip5 = request.args.get('zip',None)
 
     if zip5:
-        zips = getZips('static/uszips.csv')
+        zips = zipHolder.getZips('static/uszips.csv')
         county_list = zips(zip5)
         return jsonify({'zip': county_list})
 
@@ -88,24 +89,7 @@ def plans(args):
     dt = qu.pop('date')
     qu['effective_date'] = dt
 
-    results = load_response_all(qu, verbose=True)
-    #results['args'] = qu
-
-
-    '''
-    plans_ = qu.pop('plan')
-
-    results = {}
-    for p in ['N', 'F', 'G']:
-        try:
-            if p in plans_:
-                qu['plan'] = p
-                resp = cr.fetch_quote(**qu)
-                results[p] = filter_quote(resp, verbose=True)
-                #results[p] = load_response(cr, qu, naic=presets[preset_name], verbose=True)
-        except Exception as e:
-            results[p] = str(e)
-    '''
+    results = load_response_all(cr, qu, verbose=True)
     return jsonify(results)
 
 
@@ -120,9 +104,3 @@ def handle_error(err):
         return jsonify({"errors": messages}), err.code, headers
     else:
         return jsonify({"errors": messages}), err.code
-
-
-'''
-if __name__ == "__main__":
-    app.run(debug=True)
-'''
