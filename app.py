@@ -16,16 +16,17 @@ api = Api(app)
 
 # zip code
 zip_args = {
-    'zip5': fields.Int(required=True, validate = lambda i: len(str(i)) == 5)
+    'zip': fields.Int(required=True, validate = lambda i: len(str(i)) == 5)
 }
 class Zip(Resource):
     def __init__(self):
         self.zips = zipHolder('static/uszips.csv')
     def get(self):
         args = parser.parse(zip_args, request, location="query")
-        zip5 = args.get('zip5', None)
-        county_list = self.zips(zip5)
-        return jsonify(county_list)
+        zip5 = args.get('zip', None)
+        county_list = self.zips(zip5) if zip5 else None
+        county_dict = { 'zip' : county_list }
+        return jsonify(county_dict)
 api.add_resource(Zip, '/api/counties')
 
 
