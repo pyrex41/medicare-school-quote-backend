@@ -3,7 +3,6 @@ from flask_restful import Resource, Api
 from datetime import datetime
 from csg import csgRequest
 from zips import zipHolder
-from funcs import load_response_all
 from config import Config
 
 from webargs import fields
@@ -64,7 +63,7 @@ class Plans(Resource):
     def get(self):
         args = parser.parse(user_args, request, location="query")
         args = self.custom_arg_transform(args)
-        results = load_response_all(self.cr, args, verbose=True)
+        results = self.cr.load_response_all(args)
         return jsonify(results)
 
     def custom_arg_transform(self, args):

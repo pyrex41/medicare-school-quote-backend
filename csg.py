@@ -1,9 +1,11 @@
 import requests
+from copy import copy
+from datetime import datetime
+from toolz.functoolz import pipe
 import json
 import os
 import configparser
-
-from funcs import format_pdp, filter_quote
+from babel.numbers import format_currency
 
 class csgRequest:
     def __init__(self, api_key):
@@ -16,7 +18,7 @@ class csgRequest:
 
     def parse_token(self, file_name):
         parser = configparser.ConfigParser()
-        parser.read('token.txt')
+        parser.read(file_name)
         return parser.get('token-config', 'token')
 
     def set_token(self, token=None):
@@ -80,8 +82,27 @@ class csgRequest:
 
     def fetch_pdp(self, zip5, *years):
         resp = self._fetch_pdp(zip5).json()
-        fresp = format_pdp(resp, *years)
-        return fresp
+        return self.format_pdp(resp, *years)
+
+    def format_pdp(self, pdp_results, *_years):
+        out = []
+        years = list(_years)
+        if len(years) == 0:
+            years.append(datetime.today().year)
+        for pdpr in pdp_results:
+            dt_format = "%Y-%m-%dT%H:%M:%SZ"
+            st_dt = pdpr['effective_date']
+            dt = datetime.strptime(st_dt, dt_format)
+            info = {
+                'Plan Name': pdpr['plan_name'],
+                'Plan Type': pdpr['plan_type'],
+                'State': pdpr['state'],
+                'rate': format_currency(pdpr['month_rate']/100, 'USD', locale='en_US'),
+                'year': dt.year
+            }
+            out.append(info)
+        fout = filter(lambda x: x['year'] in years, out)
+        return list(fout)
 
     def fetch_quote(self, **kwargs):
         acceptable_args = [
@@ -109,7 +130,103 @@ class csgRequest:
         resp = self.get(self.uri + ep, params=payload)
         return resp.json()
 
+    def format_rates(self, quotes, household = False):
+        d = []
+        for i,q in enumerate(quotes):
+            rate = int(q['rate']['month'])
+            naic = q['company_base']['naic']
+            company_name = q['company_base']['name']
+            plan = q['plan']
+
+            if q['select']:
+                k = company_name + ' // Select'
+            else:
+                k = company_name
+            qq =q['rating_class']
+            if qq:
+
+                kk = k + ' // ' + q['rating_class']
+            else:
+                kk = k
+
+            has_h = 'household' in kk.lower()
+
+            if naic == '79413': # workaround for UHC levels
+                if 'level 1' in kk.lower():
+                    naic = naic + '001'
+                elif 'level 2' in kk.lower():
+                    naic = naic + '002'
+
+                if bool(household) == has_h:
+                    d.append((kk, rate, naic))
+            elif naic == '88366': # workaround for CIGNA substandard
+                if 'substandard' in kk.lower():
+                    naic = naic + '001'
+                    if has_h:
+                        if bool(household) == has_h:
+                            d.append((kk, rate, naic))
+                    else:
+                        d.append((kk, rate, naic))
+            else:
+                if has_h: # workaround for Humana // Household
+                    if bool(household) == has_h:
+                        d.append((kk, rate, naic))
+                else:
+                    d.append((kk, rate, naic))
+
+        slist = sorted(d, key=lambda x: x[1])
+        out_list = []
+        for k,v,n in slist:
+            out_list.append({
+                'company'   : k,
+                'rate'      : format_currency(v/100, 'USD', locale='en_US'),
+                'naic'      : n,
+                'plan'      : plan
+            })
+        return out_list
+
+    def filter_quote(self, quote_resp, household = False, custom_naic=None, select=False):
+        fresp = list(filter(lambda x: x['select'] == False, quote_resp)) if not select else quote_resp
+
+        if custom_naic:
+            return pipe(
+                    list(filter(lambda x: int(x['company_base']['naic']) in custom_naic,fresp)),
+                    self.format_rates)
+        else:
+            return self.format_rates(fresp, household = household)
+
+    def format_results(self, results):
+        row_dict = {}
+        for r in results:
+            for ol in r:
+                company = ol['company']
+                row = row_dict.get(company, {})
+                row[ol['plan']] = ol['rate']
+                row['naic'] = ol['naic']
+                row_dict[company] = row
+
+        rows = []
+        for c,d in row_dict.items():
+            row = {'company': c}
+            row['F Rate'] = d.get('F', None)
+            row['G Rate'] = d.get('G', None)
+            row['N Rate'] = d.get('N', None)
+            row['naic'] = int(d.get('naic', None))
+            rows.append(row)
+        return rows
+
     def load_response(self, query_data):
         resp = self.fetch_quote(**query_data)
         household = query_data.get("apply_discounts", False)
-        return filter_quote(resp, household=household)
+        return self.filter_quote(resp, household=household)
+
+    def load_response_all(self, query_data):
+        results = []
+        plans_ = query_data.pop('plan')
+        for p in ['N', 'F', 'G']:
+            qu = copy(query_data)
+            if p in plans_:
+                qu['plan'] = p
+                results.append(self.load_response(qu))
+
+        return self.format_results(results)
