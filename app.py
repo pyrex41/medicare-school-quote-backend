@@ -42,7 +42,17 @@ pdp_args = {
 class PDP(Resource):
     def get(self):
         args = parser.parse(pdp_args,request, location="query")
-        return jsonify(args)
+        try:
+            year1 = args['year1']
+            year2 = args['year2']
+            zip5 = str(args['zip']).zfill(5)
+            resp = cr.fetch_pdp(zip5, year1, year2)
+            return {
+                'body': resp,
+                'error': None
+            }
+        except Exception as e:
+            return {'body' : [None], 'error' : str(e)}
 
 api.add_resource(PDP, '/api/pdp')
 
