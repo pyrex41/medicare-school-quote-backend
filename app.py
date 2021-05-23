@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 from flask_restful import Resource, Api
 from datetime import datetime
 from csg import csgRequest
@@ -12,6 +13,7 @@ api_key = Config.API_KEY
 cr = csgRequest(api_key)
 
 app = Flask(__name__)
+CORS(app, resources=r'/api/*')
 api = Api(app)
 
 # zip code
