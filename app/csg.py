@@ -202,30 +202,3 @@ class csgRequest:
         ep = 'med_supp/quotes.json'
         resp = self.get(self.uri + ep, params=payload)
         return resp.json()
-    '''
-    async def async_fetch_quote(self, **kwargs):
-        acceptable_args = [
-            'zip5',
-            'county',
-            'age',
-            'gender',
-            'tobacco',
-            'plan',
-            'select',
-            'effective_date',
-            'apply_discounts',
-            'apply_fees',
-            'offset',
-            'naic'
-        ]
-        payload = {}
-
-        for arg_name,val in kwargs.items():
-            lowarg = arg_name.lower()
-            if lowarg in acceptable_args:
-                payload[lowarg] = val
-
-        ep = 'med_supp/quotes.json'
-        resp = await self.get(self.uri + ep, params=payload)
-        return resp.json()
-    '''

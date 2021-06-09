@@ -33,16 +33,22 @@ pdp_args = {
     "year2" : fields.Int(missing=datetime.now().year + 1, validate = lambda x: x >= datetime.now().year + 1)
 }
 
-@app.route('/api/counties', methods=['GET'])
-def counties():
-    zip5 = request.args.get('zip',None)
+county_args = {
+    'zip' : fields.Int(required=True)
+}
 
-    if zip5:
+@app.route('/api/counties', methods=['GET'])
+@use_args(county_args, location="query")
+def counties(args):
+    zip5 = args['zip']
+
+    try:
         zips = getZips('static/uszips.csv')
         county_list = zips(zip5)
         return jsonify({'zip': county_list})
 
-    return jsonify({'zip': None})
+    except:
+        return jsonify({'zip': None})
 
 @app.route('/api/pdp', methods=['GET'])
 @use_args(pdp_args, location= "query")
