@@ -1,2 +1,2 @@
 [token-config]
-token=d25c11f366a86f2a1204552ebd8c139b55481578527362e1c2cae8aaf86eeecd
+token=453068482af812a7bf5a40ceb5fc7f3fec1dfbb8fd5f11e96f6e8b9ec25f97d4
