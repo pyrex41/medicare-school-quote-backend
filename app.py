@@ -18,7 +18,7 @@ api = Api(app)
 
 # zip code
 zip_args = {
-    'zip': fields.Int(required=True, validate = lambda i: len(str(i)) == 5)
+    'zip': fields.Int(required=True)
 }
 class Zip(Resource):
     def __init__(self):
@@ -82,7 +82,7 @@ class Plans(Resource):
     def custom_arg_transform(self, args):
         args['zip5'] = str(args.pop('zip')).zfill(5)
         args['effective_date'] = args.pop('date')
-        
+
         # inline helper function to update field names
         def bool_int(a, new_field_name = None):
             b = args.pop(a)
@@ -90,7 +90,7 @@ class Plans(Resource):
                 args[new_field_name] = 0 if b == False else 1
             else:
                 args[a] = 0 if b == False else 1
-        
+
         bool_int('discounts', 'apply_discounts')
         bool_int('tobacco')
         return args
