@@ -8,7 +8,7 @@ class zipHolder():
         return self.lookup_zip(zip5)
 
     def lookup_zip(self, zip5):
-        return self.zips.get(str(zip5), ['None'])
+        return self.zips.get(str(zip5).zfill(5), ['None'])
 
     def load_zips(self, file_name):
         zips = {}
