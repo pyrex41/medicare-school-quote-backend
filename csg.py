@@ -167,7 +167,7 @@ class csgRequest:
                             d.append((kk, rate, naic))
                     else:
                         d.append((kk, rate, naic))
-            elif naic == '61727': # workaround for CIGNA standard II
+            elif naic == '61727': # workaround for CIGNA standard II -- new naic
                 if 'standard' in kk.lower():
                     naic = naic + '002'
                     if has_h:
