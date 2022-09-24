@@ -167,6 +167,12 @@ class csgRequest:
                             d.append((kk, rate, naic))
                     else:
                         d.append((kk, rate, naic))
+            elif naic == '61727': # workaround for CIGNA standard II
+                if 'standard' in kk.lower():
+                    naic = naic + '002'
+                    if has_h:
+                        if bool(household) == has_h:
+                            d.append((kk, rate, naic))
             else:
                 if has_h: # workaround for Humana // Household
                     if bool(household) == has_h:
