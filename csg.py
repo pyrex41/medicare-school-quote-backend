@@ -14,6 +14,7 @@ class csgRequest:
         try:
             self.set_token(self.parse_token('token.txt'))
         except:
+            print("could not parse token file")
             self.set_token()
 
     def parse_token(self, file_name):
@@ -130,8 +131,8 @@ class csgRequest:
         resp = self.get(self.uri + ep, params=payload)
         return resp.json()
 
-    def format_rates(self, quotes, household = False):
-        d_dict = {}
+    def format_rates(self, quotes, household):
+        dic = {}
         for i,q in enumerate(quotes):
             rate = int(q['rate']['month'])
             naic = q['company_base']['naic']
@@ -163,13 +164,24 @@ class csgRequest:
 
             # workaround for those carriers in CSG that have multiple entries to handle discounts
             # may need something better if there's other reasons for multipe naic codes -- would require a rewrite
-            if d_dict.get(naic, None):
-                if has_h == household:
-                    d_dict[naic] = (kk, rate, naic)
-            else:
-                d_dict[naic] = (kk, rate, naic)
+            arr = dic.get(naic, [])
+            arr.append((kk, rate, naic))
+            dic[naic] = arr
 
-        d = list(d_dict.values())
+        # continued workaround for carriers in CSG that don't handle household correctly
+        d = []
+        for a in dic.values():
+            if len(a) == 1: # this is the way it should work but CSG is pretty lame
+                d = d + a
+            else:
+                # what about the case(s) where len(2) but they actually aren't putting household in the fields? Trying to handle that here
+                a_filt = list(filter(lambda x: has_household(x)==household, a))
+                if len(a_filt) < len(a):
+                    d = d + a_filt
+                else:
+                    d = d + a
+
+
         slist = sorted(d, key=lambda x: x[1])
         out_list = []
         for k,v,n in slist:
@@ -226,3 +238,7 @@ class csgRequest:
                 results.append(self.load_response(qu))
 
         return self.format_results(results)
+
+def has_household(d):
+    nm = d[0].lower()
+    return 'household' in nm or 'hhd' in nm
