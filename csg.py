@@ -151,6 +151,17 @@ class csgRequest:
 
             has_h = 'household' in kk.lower() or 'hhd' in kk.lower()
 
+            # need work around for UHC, CIGNA, HUMANA because CSG api doesn't handle household discounts properly
+            household_workaround_naic = [
+                '79413', # UHC
+                '84549', # UHC
+                '88366', # CIGNA
+                '61727', # CIGNA
+                '73288'  # Humana
+            ]
+            need_hh_workaround = naic in household_workaround_naic
+
+            # need workaround for different standards of care for UHC and CIGNA -- this connects with the front end to allow custom sorting
             if naic == '79413' or naic == '84549': # workaround for UHC levels
                 if 'level 1' in kk.lower():
                     naic = naic + '001'
@@ -158,10 +169,13 @@ class csgRequest:
                     naic = naic + '002'
             elif naic == '88366' or naic == '61727': # workaround for CIGNA substandard
                 if 'standard' in kk.lower():
-                    naic = naic + '001'
+                    naic = naic + 001
 
-
-            d.append((kk, rate, naic))
+            if need_hh_workaround:
+                if has_h == household:
+                    d.append((kk, rate, naic))
+            else:
+                d.append((kk, rate, naic))
 
         slist = sorted(d, key=lambda x: x[1])
         out_list = []
