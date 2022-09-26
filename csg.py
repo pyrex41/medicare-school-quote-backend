@@ -151,29 +151,20 @@ class csgRequest:
 
             has_h = 'household' in kk.lower() or 'hhd' in kk.lower()
 
-
             if naic == '79413' or naic == '84549': # workaround for UHC levels
                 if 'level 1' in kk.lower():
                     naic = naic + '001'
                 elif 'level 2' in kk.lower():
                     naic = naic + '002'
-
-                if bool(household) == has_h:
-                    d.append((kk, rate, naic))
             elif naic == '88366' or naic == '61727': # workaround for CIGNA substandard
                 if 'substandard' in kk.lower() or 'standard' in kk.lower():
                     naic = naic + '001'
-                if has_h:
-                    if bool(household) == has_h:
+
+            if has_h:
+                if bool(household) == has_h:
                         d.append((kk, rate, naic))
-                else:
-                    d.append((kk, rate, naic))
             else:
-                if has_h: # workaround for Humana // Household
-                    if bool(household) == has_h:
-                        d.append((kk, rate, naic))
-                else:
-                    d.append((kk, rate, naic))
+                d.append((kk, rate, naic))
 
         slist = sorted(d, key=lambda x: x[1])
         out_list = []
