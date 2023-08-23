@@ -2,7 +2,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_restful import Resource, Api
 from datetime import datetime
-from csg import csgRequest
+from csg import csgRequest, fetch_sheet_and_export_to_csv
 from zips import zipHolder
 from config import Config
 
@@ -96,6 +96,14 @@ class Plans(Resource):
         return args
 
 api.add_resource(Plans, '/api/plans')
+
+class FetchSheet(Resource):
+    def get(self):
+        fetch_sheet_and_export_to_csv()
+        return jsonify({'message': 'Sheet fetched and exported to CSV'})
+
+api.add_resource(FetchSheet, '/api/fetch_sheet')
+
 
 if __name__ == '__main__':
     app.run(debug=True)

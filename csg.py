@@ -8,10 +8,53 @@ import configparser
 from babel.numbers import format_currency
 import logging
 from pprint import pprint
+import time
 
 # Correcting the function and testing it with the provided file
-
+#
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 import csv
+
+def fetch_sheet_and_export_to_csv():
+
+    creds_file = "credentials.json"
+    sheet_url = "https://docs.google.com/spreadsheets/d/1xg8p-aWEfzcTllZnILUY3-7oxC1hOgwBnzLeoUfbUhA"
+    csv_filename = "cat.csv"
+    
+    # Setup the credentials
+    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    creds = ServiceAccountCredentials.from_json_keyfile_name(creds_file, scope)
+    client = gspread.authorize(creds)
+
+    # Open the sheet by URL
+    sheet = client.open_by_url(sheet_url).sheet1
+
+    # Get all values from the sheet
+    values = sheet.get_all_values()
+
+    # ignore first 10 rows
+    values = values[10:]
+
+    # Check if the first row has the required headers
+    if values and values[0][:3] == ["Category", "ID", "Name"]:
+        # Write the values to a CSV file
+        with open(csv_filename, 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerows(values)
+        
+        logging.info("Data successfully written to CSV file")
+        pprint("Saved!")
+        
+    else:
+        logging.error("Header validation failed. The CSV was not saved.")
+
+
+
+# Example usage:
+
+fetch_sheet_and_export_to_csv()
+
 
 def csv_to_dict(filename):
     with open(filename, 'r') as file:
@@ -32,6 +75,19 @@ def csv_to_dict(filename):
 
 # Testing the function
 name_dict = csv_to_dict('cat.csv')
+
+def rate_limited(interval):
+    def decorator(function):
+        last_called = [0.0]
+        def wrapper(*args, **kwargs):
+            elapsed = time.time() - last_called[0]
+            if elapsed >= interval:
+                last_called[0] = time.time()
+                fetch_sheet_and_export_to_csv()
+            return function(*args, **kwargs)
+        return wrapper
+    return decorator
+
 
 class csgRequest:
     def __init__(self, api_key):
@@ -157,6 +213,7 @@ class csgRequest:
         resp = self.get(self.uri + ep, params=payload)
         return resp.json()
 
+    @rate_limited(3600)
     def format_rates(self, quotes, household):
         dic = {}
         for i,q in enumerate(quotes):
@@ -315,6 +372,9 @@ class csgRequest:
 
 def has_household(kk):
     nm = kk.lower()
+    # Load name_dict from cat.csv
+    name_dict = csv_to_dict('cat.csv')
+    
     nm_list = set([x['Household'].lower() for x in name_dict.values() if x['Household']])
     for x in nm_list:
         if x in nm:
