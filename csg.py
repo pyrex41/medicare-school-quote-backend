@@ -150,8 +150,6 @@ class csgRequest:
             else:
                 kk = k
 
-            has_h = 'household' in kk.lower() or 'hhd' in kk.lower() or 'roommate' in kk.lower()
-
             # need workaround for different standards of care for UHC and CIGNA -- this connects with the front end to allow custom sorting
             if naic == '79413' or naic == '84549': # workaround for UHC levels
                 if 'level 1' in kk.lower():
@@ -247,4 +245,4 @@ class csgRequest:
 
 def has_household(d):
     nm = d[0].lower()
-    return 'household' in nm or 'hhd' in nm
+    return 'household' in nm or 'hhd' in nm or 'roommate' in nm
