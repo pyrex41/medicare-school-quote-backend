@@ -150,7 +150,7 @@ class csgRequest:
             else:
                 kk = k
 
-            has_h = 'household' in kk.lower() or 'hhd' in kk.lower()
+            has_h = 'household' in kk.lower() or 'hhd' in kk.lower() or 'roomate' in kk.lower()
 
             # need workaround for different standards of care for UHC and CIGNA -- this connects with the front end to allow custom sorting
             if naic == '79413' or naic == '84549': # workaround for UHC levels
@@ -160,6 +160,12 @@ class csgRequest:
                     naic = naic + '002'
             elif naic == '88366' or naic == '61727': # workaround for CIGNA substandard
                 if 'standard' in kk.lower():
+                    naic = naic + '001'
+            elif naic == '82538':
+                atest = 'wearable' in kk.lower()
+                btest = 'roomate' in kk.lower()
+                ctest = 'dual' in kk.lower()
+                if atest or btest or ctest:
                     naic = naic + '001'
 
             # workaround for those carriers in CSG that have multiple entries to handle discounts
