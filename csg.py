@@ -6,6 +6,32 @@ import json
 import os
 import configparser
 from babel.numbers import format_currency
+import logging
+from pprint import pprint
+
+# Correcting the function and testing it with the provided file
+
+import csv
+
+def csv_to_dict(filename):
+    with open(filename, 'r') as file:
+        reader = csv.DictReader(file)
+        result = {}
+        for row in reader:
+            # Convert 'Category' and 'ID' to integers
+            row["Category"] = int(row["Category"])
+            # Check for null string key and filter it out
+            if "" in row:
+                del row[""]
+            # Replace blank strings with None
+            for key, value in row.items():
+                if value == '':
+                    row[key] = None
+            result[row["ID"]] = row
+    return result
+
+# Testing the function
+name_dict = csv_to_dict('cat.csv')
 
 class csgRequest:
     def __init__(self, api_key):
@@ -149,7 +175,8 @@ class csgRequest:
                 kk = k + ' // ' + q['rating_class']
             else:
                 kk = k
-
+        
+            """
             # need workaround for different standards of care for UHC and CIGNA -- this connects with the front end to allow custom sorting
             if naic == '79413' or naic == '84549': # workaround for UHC levels
                 if 'level 1' in kk.lower():
@@ -165,40 +192,79 @@ class csgRequest:
                 ctest = 'dual' in kk.lower()
                 if atest or btest or ctest:
                     naic = naic + '001'
-
+            """
             # workaround for those carriers in CSG that have multiple entries to handle discounts
             # may need something better if there's other reasons for multipe naic codes -- would require a rewrite
             arr = dic.get(naic, [])
-            arr.append((kk, rate, naic))
+            cat = 2
+            disp = kk
+
+            ddic = name_dict.get(naic)
+            if ddic:
+                sub = False
+                i = 1
+                while i < 10:
+                    s = str(i)
+                    if ddic.get(s):
+                        sval = ddic[s]
+                        if sval.lower() in kk.lower():
+                            naic = f"{naic}00{s}"
+                            disp = f"{ddic.get('Name')} // {ddic.get(s, '').capitalize()}"
+                            cat = 1
+                            sub = True
+                            break
+                    i += 1
+                if not sub:
+                    cat = ddic.get("Category", 2)
+                    disp = ddic.get("Name", kk)
+                
+            arr.append((kk, rate, naic, cat, disp))
             dic[naic] = arr
 
         # continued workaround for carriers in CSG that don't handle household correctly
         d = []
         for a in dic.values():
             if len(a) == 1: # this is the way it should work but CSG is pretty lame
-                d = d + a
+                if bool(household):
+                    d = d + a
+                else:
+                    # handling an edge case for Allstate where it returns a single "Rooommate" but doesn't put household in the fields
+                    a_filt = list(filter(lambda x: has_household(x[0])==bool(household), a))
+                    if len(a_filt) < len(a):
+                        d = d + a_filt
+                    else:
+                        d = d + a
             else:
                 # what about the case(s) where len(2) but they actually aren't putting household in the fields? Trying to handle that here
-                a_filt = list(filter(lambda x: has_household(x)==household, a))
+                a_filt = list(filter(lambda x: has_household(x[0])==bool(household), a))
                 if len(a_filt) < len(a):
                     d = d + a_filt
                 else:
                     d = d + a
+            
 
 
         slist = sorted(d, key=lambda x: x[1])
         out_list = []
-        for k,v,n in slist:
+        for k,v,n,c,disp in slist:
             out_list.append({
                 'company'   : k,
                 'rate'      : format_currency(v/100, 'USD', locale='en_US'),
                 'naic'      : n,
-                'plan'      : plan
+                'plan'      : plan,
+                'category'  : c,
+                'display'   : disp
             })
         return out_list
 
     def filter_quote(self, quote_resp, household = False, custom_naic=None, select=False):
-        fresp = list(filter(lambda x: x['select'] == False, quote_resp)) if not select else quote_resp
+        
+        try:
+            fresp = list(filter(lambda x: x['select'] == False, quote_resp)) if not select else quote_resp
+        except Exception as e:
+            logging.error(f"Error in filter_quote: {str(e)}")
+            raise
+        
 
         if custom_naic:
             return pipe(
@@ -215,6 +281,8 @@ class csgRequest:
                 row = row_dict.get(company, {})
                 row[ol['plan']] = ol['rate']
                 row['naic'] = ol['naic']
+                row['category'] = ol['category']
+                row['display'] = ol['display']
                 row_dict[company] = row
 
         rows = []
@@ -224,6 +292,8 @@ class csgRequest:
             row['G Rate'] = d.get('G', None)
             row['N Rate'] = d.get('N', None)
             row['naic'] = int(d.get('naic', None))
+            row['category'] = d.get('category', None)
+            row['display'] = d.get('display', None)
             rows.append(row)
         return rows
 
@@ -243,6 +313,10 @@ class csgRequest:
 
         return self.format_results(results)
 
-def has_household(d):
-    nm = d[0].lower()
-    return 'household' in nm or 'hhd' in nm or 'roommate' in nm
+def has_household(kk):
+    nm = kk.lower()
+    nm_list = set([x['Household'].lower() for x in name_dict.values() if x['Household']])
+    for x in nm_list:
+        if x in nm:
+            return True
+    return False
