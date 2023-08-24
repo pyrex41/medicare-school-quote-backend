@@ -2,7 +2,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_restful import Resource, Api
 from datetime import datetime
-from csg import csgRequest, fetch_sheet_and_export_to_csv, csv_to_dict
+from csg import csgRequest, fetch_sheet_and_export_to_csv
 from zips import zipHolder
 from config import Config
 

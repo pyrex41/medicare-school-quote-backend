@@ -282,7 +282,13 @@ class csgRequest:
                     cat = ddic.get("Category", 2)
                     disp = ddic.get("Name", kk)
                 
-            arr.append((kk, rate, naic, cat, disp))
+            arr.append({
+                "fullname": kk, 
+                "rate": rate, 
+                "naic": naic, 
+                "category": cat, 
+                "display": disp}
+                )
             dic[naic] = arr
 
         # continued workaround for carriers in CSG that don't handle household correctly
@@ -293,31 +299,38 @@ class csgRequest:
                     d = d + a
                 else:
                     # handling an edge case for Allstate where it returns a single "Rooommate" but doesn't put household in the fields
-                    a_filt = list(filter(lambda x: has_household(x[0])==bool(household), a))
+                    a_filt = list(filter(lambda x: has_household(x)==bool(household), a))
                     if len(a_filt) < len(a):
                         d = d + a_filt
                     else:
                         d = d + a
             else:
                 # what about the case(s) where len(2) but they actually aren't putting household in the fields? Trying to handle that here
-                a_filt = list(filter(lambda x: has_household(x[0])==bool(household), a))
+                a_filt = list(filter(lambda x: has_household(x)==bool(household), a))
                 if len(a_filt) < len(a):
-                    d = d + a_filt
+                    a_add = a_filt
                 else:
-                    d = d + a
+                    a_add = a
+
+                a_add = sorted(a_add, key = lambda x: "//" in x["fullname"])
+                if len(a_add) > 1:
+                    for i in range(1,len(a_add)):
+                        a_add[i]["category"] = 1  # category 1 for anything after the first
+
+                d = d + a_add
             
 
 
-        slist = sorted(d, key=lambda x: x[1])
+        slist = sorted(d, key=lambda x: x["rate"])
         out_list = []
-        for k,v,n,c,disp in slist:
+        for dic in slist:
             out_list.append({
-                'company'   : k,
-                'rate'      : format_currency(v/100, 'USD', locale='en_US'),
-                'naic'      : n,
+                'company'   : dic["fullname"],
+                'rate'      : format_currency(dic["rate"]/100, 'USD', locale='en_US'),
+                'naic'      : dic["naic"],
                 'plan'      : plan,
-                'category'  : c,
-                'display'   : disp
+                'category'  : dic["category"],
+                'display'   : dic["display"]
             })
         return out_list
 
@@ -377,7 +390,8 @@ class csgRequest:
 
         return self.format_results(results)
 
-def has_household(kk):
+def has_household(x):
+    kk = x["fullname"]
     nm = kk.lower()
     # Load name_dict from cat.csv
     name_dict = csv_to_dict('cat.csv')
