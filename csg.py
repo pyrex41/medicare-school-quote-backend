@@ -81,9 +81,6 @@ def csv_to_dict(filename):
             result[row["ID"]] = row
     return result
 
-# Testing the function
-name_dict = csv_to_dict('cat.csv')
-
 def rate_limited(interval):
     def decorator(function):
         last_called = [0.0]
@@ -263,6 +260,8 @@ class csgRequest:
             arr = dic.get(naic, [])
             cat = 2
             disp = kk
+
+            name_dict = csv_to_dict('cat.csv')
 
             ddic = name_dict.get(naic)
             if ddic:
