@@ -55,6 +55,14 @@ def fetch_sheet_and_export_to_csv():
 
 fetch_sheet_and_export_to_csv()
 
+# convert a or b to 0 or 1, default 2
+def map_cat(a_or_b: str):
+    if a_or_b.lower() == "a":
+        return 0
+    elif a_or_b.lower() == "b":
+        return 1
+    else:
+        return 2
 
 def csv_to_dict(filename):
     with open(filename, 'r') as file:
@@ -62,7 +70,7 @@ def csv_to_dict(filename):
         result = {}
         for row in reader:
             # Convert 'Category' and 'ID' to integers
-            row["Category"] = int(row["Category"])
+            row["Category"] = map_cat(row["Category"]) #int(row["Category"])
             # Check for null string key and filter it out
             if "" in row:
                 del row[""]
