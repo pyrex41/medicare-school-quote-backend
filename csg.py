@@ -177,7 +177,7 @@ class csgRequest:
             emsg = {
                 'Plan Name': "ERROR",
                 'Plan Type': str(ee),
-                'State': "NA",
+                'State': "CA",
                 'rate': format_currency(0, 'USD', locale='en_US'),
                 'year': list(years)[0]
             }
