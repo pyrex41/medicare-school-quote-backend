@@ -169,8 +169,19 @@ class csgRequest:
         return resp
 
     def fetch_pdp(self, zip5, *years):
-        resp = self._fetch_pdp(zip5).json()
-        return self.format_pdp(resp, *years)
+        resp = self._fetch_pdp(zip5)
+        try:
+            resp = resp.json()
+            return self.format_pdp(resp, *years)
+        except Exception as ee:
+            emsg = {
+                'Plan Name': "ERROR",
+                'Plan Type': str(ee),
+                'State': "NA",
+                'rate': format_currency(0, 'USD', locale='en_US'),
+                'year': 1970
+            }
+            return [emsg]
 
     def format_pdp(self, pdp_results, *_years):
         out = []
