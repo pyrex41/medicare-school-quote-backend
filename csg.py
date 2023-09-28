@@ -179,7 +179,7 @@ class csgRequest:
                 'Plan Type': str(ee),
                 'State': "NA",
                 'rate': format_currency(0, 'USD', locale='en_US'),
-                'year': 1970
+                'year': list(years)[0]
             }
             return [emsg]
 
