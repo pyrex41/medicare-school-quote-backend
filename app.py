@@ -29,7 +29,7 @@ class Zip(Resource):
         zip5 = args.get('zip', None)
         show_state = args.get('show_state', False)
         county_list, state = self.zips(zip5, show_state=True) if zip5 else (None, None)
-        dic = { 'zip' : county_list }
+        dic = { 'counties' : county_list }
         if show_state:
             dic['state'] = state
         return jsonify(dic)
