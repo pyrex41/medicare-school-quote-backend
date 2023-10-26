@@ -18,7 +18,8 @@ api = Api(app)
 
 # zip code
 zip_args = {
-    'zip': fields.Int(required=True)
+    'zip': fields.Int(required=True),
+    'show_state': fields.Bool(required=False)
 }
 class Zip(Resource):
     def __init__(self):
@@ -26,9 +27,13 @@ class Zip(Resource):
     def get(self):
         args = parser.parse(zip_args, request, location="query")
         zip5 = args.get('zip', None)
-        county_list = self.zips(zip5) if zip5 else None
-        county_dict = { 'zip' : county_list }
-        return jsonify(county_dict)
+        show_state = args.get('show_state', False)
+        county_list, state = self.zips(zip5, show_state=True) if zip5 else (None, None)
+        dic = { 'zip' : county_list }
+        if show_state:
+            dic['state'] = state
+        return jsonify(dic)
+    
 api.add_resource(Zip, '/api/counties')
 
 
