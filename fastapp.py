@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 
@@ -12,6 +13,24 @@ import asyncio
 
 # FastAPI app initialization
 app = FastAPI()
+
+# CORS middleware settings
+origins = [
+    "http://localhost:8000",
+    "http://localhost:8080",
+    "http://localhost:9000",
+    "https://medicareschool-quote.netlify.app",
+    "http://medicareschoolquote.com",
+    "https://medicareschoolquote.com"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Assuming the API key and csgRequest instantiation are the same as in the Flask app
 api_key = Config.API_KEY
