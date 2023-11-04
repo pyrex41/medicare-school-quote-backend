@@ -1,17 +1,23 @@
-import requests
-from copy import copy
-from datetime import datetime
-from toolz.functoolz import pipe
-import json
-import os
-import configparser
-from babel.numbers import format_currency
-import logging
-from pprint import pprint
-import time
+import httpx
+from httpx import ReadTimeout
 
-# Correcting the function and testing it with the provided file
-#
+from toolz.functoolz import pipe
+from datetime import datetime
+import configparser
+from copy import copy
+import asyncio
+from babel.numbers import format_currency
+
+from config import Config
+
+import time
+from pprint import pprint
+import csv
+import logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+
+
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import csv
@@ -51,18 +57,19 @@ def fetch_sheet_and_export_to_csv():
 
 
 
-# Example usage:
+def rate_limited(interval):
+    def decorator(function):
+        last_called = [0.0]
+        def wrapper(*args, **kwargs):
+            elapsed = time.time() - last_called[0]
+            if elapsed >= interval:
+                last_called[0] = time.time()
+                fetch_sheet_and_export_to_csv()
+            return function(*args, **kwargs)
+        return wrapper
+    return decorator
 
 fetch_sheet_and_export_to_csv()
-
-# convert a or b to 0 or 1, default 2
-def map_cat(a_or_b: str):
-    if a_or_b.lower() == "a":
-        return 0
-    elif a_or_b.lower() == "b":
-        return 1
-    else:
-        return 2
 
 def csv_to_dict(filename):
     with open(filename, 'r') as file:
@@ -81,45 +88,49 @@ def csv_to_dict(filename):
             result[row["ID"]] = row
     return result
 
-def rate_limited(interval):
-    def decorator(function):
-        last_called = [0.0]
-        def wrapper(*args, **kwargs):
-            elapsed = time.time() - last_called[0]
-            if elapsed >= interval:
-                last_called[0] = time.time()
-                fetch_sheet_and_export_to_csv()
-            return function(*args, **kwargs)
-        return wrapper
-    return decorator
+def map_cat(a_or_b: str):
+    if a_or_b.lower() == "a":
+        return 0
+    elif a_or_b.lower() == "b":
+        return 1
+    else:
+        return 2
 
-
-class csgRequest:
+class AsyncCSGRequest:
     def __init__(self, api_key):
         self.uri = 'https://csgapi.appspot.com/v1/'
         self.api_key = api_key
-        try:
-            self.set_token(self.parse_token('token.txt'))
-        except:
-            print("could not parse token file")
-            self.set_token()
+        self.token = None  # Will be set asynchronously in an init method
 
-    def parse_token(self, file_name):
+    async def async_init(self):
+        try:
+            await self.set_token(await self.parse_token('token.txt'))
+        except Exception as e:
+            print(f"Could not parse token file: {e}")
+            await self.set_token()
+
+    async def parse_token(self, file_name):
+        # Assuming the token file contains a section [token-config] with a token entry
         parser = configparser.ConfigParser()
-        parser.read(file_name)
+        with open(file_name, 'r') as file:
+            parser.read_file(file)
         return parser.get('token-config', 'token')
 
-    def set_token(self, token=None):
-        self.token = token if token else self.fetch_token()
+    async def set_token(self, token=None):
+        self.token = token if token else await self.fetch_token()
+        # Token is set, no need to write to a file unless it's a new token
+        if not token:
+            # Write the token to 'token.txt' asynchronously
+            with open('token.txt', 'w') as f:
+                f.write(f"[token-config]\ntoken={self.token}")
 
-        try:
-            os.remove("token.txt")
-        except:
-            pass
-
-        with open("token.txt", "w+") as my_file:
-            my_file.write("[token-config]\n")
-            my_file.write("token={}".format(self.token))
+    async def fetch_token(self):
+        ep = 'auth.json'
+        values = {'api_key': self.api_key}
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(self.uri + ep, json=values)
+            resp.raise_for_status()  # Will raise an exception for 4XX and 5XX status codes
+            return resp.json()['token']
 
     def GET_headers(self):
         return {
@@ -127,51 +138,46 @@ class csgRequest:
             'x-api-token': self.token
         }
 
-    def fetch_token(self):
-        ep = 'auth.json'
-        values = json.dumps({'api_key': self.api_key})
-        headers = {'Content-Type': 'application/json'}
-        resp = requests.post(self.uri + ep, data = values, headers = headers)
-        jr = resp.json()
-        # todo -- add error handling if too many sessions
-        token = jr['token']
-        return token
+    async def reset_token(self):
+        print('Resetting token asynchronously')
+        await self.set_token(token=None)
 
-    def reset_token(self):
-        print('resetting token')
-        self.set_token(token=None)
+    async def get(self, uri, params):
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(uri, params=params, headers=self.GET_headers())
+            if resp.status_code == 403:
+                await self.reset_token()
+                resp = await client.get(uri, params=params, headers=self.GET_headers())
+            resp.raise_for_status()  # Will raise an exception for 4XX and 5XX status codes
+            return resp.json()
 
-    def get(self, uri, params):
-        resp = requests.get(uri, params=params, headers=self.GET_headers())
 
-        if resp.status_code == 403:
-            self.reset_token()
-            return requests.get(uri, params=params, headers=self.GET_headers())
-        elif resp.status_code == 400:
-            # Adding this to deal with situation where county name is malformed.
-            # May not properly address hypothetical situation where there are different
-            # prices intra-zip code based on county.
+    async def get(self, uri, params):
+        for _ in range(3):  # Retry up to 3 times
             try:
-                params.pop('county')
-                return requests.get(uri, params=params, headers=self.GET_headers())
-            except:
-                return resp
-        else:
-            return resp
+                async with httpx.AsyncClient(timeout=20.0) as client:  # Increase timeout
+                    resp = await client.get(uri, params=params, headers=self.GET_headers())
+                    if resp.status_code == 403:
+                        await self.reset_token()
+                        resp = await client.get(uri, params=params, headers=self.GET_headers())
+                    resp.raise_for_status()  # Will raise an exception for 4XX and 5XX status codes
+                    return resp.json()
+            except ReadTimeout:
+                print("Request timed out. Retrying...")
+        raise Exception("Request failed after 3 attempts")
 
-    def _fetch_pdp(self, zip5):
+    async def _fetch_pdp(self, zip5):
         ep = 'medicare_advantage/quotes.json'
         payload = {
             'zip5': zip5,
             'plan': 'pdp',
         }
-        resp = self.get(self.uri + ep, params=payload)
+        resp = await self.get(self.uri + ep, params=payload)
         return resp
 
-    def fetch_pdp(self, zip5, *years):
-        resp = self._fetch_pdp(zip5)
+    async def fetch_pdp(self, zip5, *years):
+        resp = await self._fetch_pdp(zip5)
         try:
-            resp = resp.json()
             return self.format_pdp(resp, *years)
         except Exception as ee:
             emsg = {
@@ -182,7 +188,7 @@ class csgRequest:
                 'year': list(years)[0]
             }
             return [emsg]
-
+        
     def format_pdp(self, pdp_results, *_years):
         out = []
         years = list(_years)
@@ -202,8 +208,8 @@ class csgRequest:
             out.append(info)
         fout = filter(lambda x: x['year'] in years, out)
         return list(fout)
-
-    def fetch_quote(self, **kwargs):
+    
+    async def fetch_quote(self, **kwargs):
         acceptable_args = [
             'zip5',
             'county',
@@ -226,10 +232,10 @@ class csgRequest:
                 payload[lowarg] = val
 
         ep = 'med_supp/quotes.json'
-        resp = self.get(self.uri + ep, params=payload)
-        return resp.json()
+        resp = await self.get(self.uri + ep, params=payload)
+        return resp
     
-    def fetch_advantage(self, **kwargs):
+    async def fetch_advantage(self, **kwargs):
         acceptable_args = [
             'zip5',
             'state',
@@ -251,10 +257,9 @@ class csgRequest:
             raise ValueError("The 'zip5' argument is required.")
 
         ep = 'medicare_advantage/quotes.json'
-        resp = self.get(self.uri + ep, params=payload)
-        return resp.json()
-
-
+        resp = await self.get(self.uri + ep, params=payload)
+        return resp
+    
     @rate_limited(3600)
     def format_rates(self, quotes, household):
         dic = {}
@@ -274,24 +279,7 @@ class csgRequest:
                 kk = k + ' // ' + q['rating_class']
             else:
                 kk = k
-        
-            """
-            # need workaround for different standards of care for UHC and CIGNA -- this connects with the front end to allow custom sorting
-            if naic == '79413' or naic == '84549': # workaround for UHC levels
-                if 'level 1' in kk.lower():
-                    naic = naic + '001'
-                elif 'level 2' in kk.lower():
-                    naic = naic + '002'
-            elif naic == '88366' or naic == '61727': # workaround for CIGNA substandard
-                if 'standard' in kk.lower():
-                    naic = naic + '001'
-            elif naic == '82538':
-                atest = 'wearable' in kk.lower()
-                btest = 'roomate' in kk.lower()
-                ctest = 'dual' in kk.lower()
-                if atest or btest or ctest:
-                    naic = naic + '001'
-            """
+
             # workaround for those carriers in CSG that have multiple entries to handle discounts
             # may need something better if there's other reasons for multipe naic codes -- would require a rewrite
             arr = dic.get(naic, [])
@@ -370,7 +358,7 @@ class csgRequest:
                 'display'   : dic["display"]
             })
         return out_list
-
+    
     def filter_quote(self, quote_resp, household = False, custom_naic=None, select=False):
         
         try:
@@ -410,23 +398,33 @@ class csgRequest:
             row['display'] = d.get('display', None)
             rows.append(row)
         return rows
-
-    def load_response(self, query_data):
-        resp = self.fetch_quote(**query_data)
+    
+    async def load_response(self, query_data, delay = None):
+        if delay:
+            await asyncio.sleep(delay)
+        resp = await self.fetch_quote(**query_data)
         household = query_data.get("apply_discounts", False)
         return self.filter_quote(resp, household=household)
-
-    def load_response_all(self, query_data):
+    
+    async def load_response_all(self, query_data, delay = None):
         results = []
         plans_ = query_data.pop('plan')
+        tasks = []
+        p_actual = []
         for p in ['N', 'F', 'G']:
-            qu = copy(query_data)
             if p in plans_:
-                qu['plan'] = p
-                results.append(self.load_response(qu))
+                p_actual.append(p)
+        for i,p in enumerate(p_actual):
+            d = delay * i if delay else 0
+            qu = copy(query_data)
+            qu['plan'] = p
+            tasks.append(self.load_response(qu, delay = d))
+
+        for task in asyncio.as_completed(tasks):
+            results.append(await task)
 
         return self.format_results(results)
-
+    
 def has_household(x):
     kk = x["fullname"]
     nm = kk.lower()
@@ -438,3 +436,41 @@ def has_household(x):
         if x in nm:
             return True
     return False
+
+
+# Example usage
+async def main():
+    csg = AsyncCSGRequest(Config.API_KEY)
+    await csg.async_init()
+    # Example of making a request
+    query_data = {
+        'zip5': 62001, 
+        'gender': 'M',
+        'age': 65, 
+        'county': 'MADISON', 
+        'tobacco': 0, 
+        'effective_date': '2023-12-01', 
+        'plan': 'N'
+    }
+    response = await csg.load_response_all(query_data, delay=.2)
+    return response
+
+""" 
+# Run the async main function           
+r = lambda : asyncio.run(main())
+import time
+import statistics
+
+from tqdm import tqdm
+
+run_times = []
+for _ in tqdm(range(20)):
+    start_time = time.time()
+    r()
+    run_times.append(time.time() - start_time)
+
+print("--- Min: %s seconds ---" % min(run_times))
+print("--- Median: %s seconds ---" % statistics.median(run_times))
+print("--- Max: %s seconds ---" % max(run_times))   
+print("--- Mean: %s seconds ---" % statistics.mean(run_times))
+"""
