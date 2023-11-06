@@ -8,7 +8,7 @@ from async_csg import fetch_sheet_and_export_to_csv
 from async_csg import AsyncCSGRequest as csg
 from zips import zipHolder
 from config import Config
-import asyncio
+from pprint import pprint
 
 
 # FastAPI app initialization
@@ -114,7 +114,10 @@ async def get_plans(zip: int = Query(..., description="ZIP code"),
         }
         args['zip5'] = str(args.pop('zip')).zfill(5)
         args['effective_date'] = args.pop('date')
+        pprint("fastapp:")
+        pprint(args)
         results = await cr.load_response_all(args, delay=.2)
+
         return results
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
