@@ -9,6 +9,7 @@ from async_csg import AsyncCSGRequest as csg
 from zips import zipHolder
 from config import Config
 from pprint import pprint
+import logging
 
 
 # FastAPI app initialization
@@ -114,8 +115,8 @@ async def get_plans(zip: int = Query(..., description="ZIP code"),
         }
         args['zip5'] = str(args.pop('zip')).zfill(5)
         args['effective_date'] = args.pop('date')
-        pprint("fastapp:")
-        pprint(args)
+        logging.info("fastapp:")
+        logging.info(args)
         results = await cr.load_response_all(args, delay=.2)
 
         return results
