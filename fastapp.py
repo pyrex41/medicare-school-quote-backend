@@ -115,8 +115,16 @@ async def get_plans(zip: int = Query(..., description="ZIP code"),
         }
         args['zip5'] = str(args.pop('zip')).zfill(5)
         args['effective_date'] = args.pop('date')
-        logging.info("fastapp:")
-        logging.info(args)
+        def bool_int(a, new_field_name = None):
+            b = args.pop(a)
+            if new_field_name:
+                args[new_field_name] = 0 if b == False else 1
+            else:
+                args[a] = 0 if b == False else 1
+
+        bool_int('discounts', 'apply_discounts')
+        bool_int('tobacco')
+
         results = await cr.load_response_all(args, delay=.2)
 
         return results
