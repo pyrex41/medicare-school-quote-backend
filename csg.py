@@ -414,8 +414,8 @@ class csgRequest:
     def load_response(self, query_data):
         resp = self.fetch_quote(**query_data)
         household = query_data.get("apply_discounts", False)
-        pprint("csg:")
-        pprint(query_data)
+        logging.info("csg:")
+        logging.info(query_data)
         return self.filter_quote(resp, household=household)
 
     def load_response_all(self, query_data):
