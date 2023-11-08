@@ -155,7 +155,12 @@ class AsyncCSGRequest:
             mc.set('csg_token', self.token)
         if self.first:
             mc.set('lock', False)
-            logging.info("Lock Deactivated!")
+            logging.info("Lock Deactivated by first!")
+
+        await asyncio.sleep(random.uniform(15,25))
+        if mc.get('lock'):
+            mc.set('lock', False)
+            logging.warn("Lock was left on !? Deacting using fallback")
             """ 
             with open('token.txt', 'w') as f:
                 f.write(f"[token-config]\ntoken={self.token}")
