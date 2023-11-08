@@ -120,6 +120,7 @@ class AsyncCSGRequest:
     async def async_init(self):
         try:
             token = mc.get('csg_token')
+            logging.info(f"Token: {token}")
             await self.set_token(token=token)
         except Exception as e:
             print(f"Could not get token somehow: {e}")
