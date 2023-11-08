@@ -22,6 +22,23 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import csv
 
+from pymemcache.client.base import Client
+import os
+
+# Use environment variables provided by Heroku to get the MemCachier credentials
+memcachier_servers = os.environ.get('MEMCACHIER_SERVERS')
+memcachier_username = os.environ.get('MEMCACHIER_USERNAME')
+memcachier_password = os.environ.get('MEMCACHIER_PASSWORD')
+
+# Split servers into a list and strip whitespace
+servers = [server.strip() for server in memcachier_servers.split(',')]
+
+# Create a Memcache client
+client = Client(servers[0], username=memcachier_username, password=memcachier_password)
+
+# Set a value in Memcache
+
+
 def fetch_sheet_and_export_to_csv():
 
     creds_file = "credentials.json"
@@ -104,25 +121,32 @@ class AsyncCSGRequest:
 
     async def async_init(self):
         try:
-            await self.set_token(await self.parse_token('token.txt'))
+            token = client.get('csg_token')
+            await self.set_token(token=token)
         except Exception as e:
-            print(f"Could not parse token file: {e}")
+            print(f"Could not get token somehow: {e}")
             await self.set_token()
 
     async def parse_token(self, file_name):
         # Assuming the token file contains a section [token-config] with a token entry
+        
+        """ 
         parser = configparser.ConfigParser()
         with open(file_name, 'r') as file:
             parser.read_file(file)
         return parser.get('token-config', 'token')
+        """
 
     async def set_token(self, token=None):
         self.token = token if token else await self.fetch_token()
         # Token is set, no need to write to a file unless it's a new token
         if not token:
             # Write the token to 'token.txt' asynchronously
+            client.set('csg_token', self.token)
+            """ 
             with open('token.txt', 'w') as f:
                 f.write(f"[token-config]\ntoken={self.token}")
+            """
 
     async def fetch_token(self):
         ep = 'auth.json'
