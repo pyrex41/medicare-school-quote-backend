@@ -120,16 +120,16 @@ class AsyncCSGRequest:
 
     async def async_init(self):
         try:
-            token = mc.get('csg_token')
+            token = await self.load_token()
             logging.info(f"Token: {token}")
             await self.set_token(token=token)
         except Exception as e:
             print(f"Could not get token somehow: {e}")
             await self.set_token()
 
-    async def parse_token(self, file_name):
+    async def load_token(self):
         # Assuming the token file contains a section [token-config] with a token entry
-        
+        return mc.get('csg_token')
         """ 
         parser = configparser.ConfigParser()
         with open(file_name, 'r') as file:
@@ -168,6 +168,7 @@ class AsyncCSGRequest:
         await self.set_token(token=None)
 
     async def get(self, uri, params):
+        await self.load_token()
         async with httpx.AsyncClient(timeout=10.0) as client:
             resp = await client.get(uri, params=params, headers=self.GET_headers())
             if resp.status_code == 403:
