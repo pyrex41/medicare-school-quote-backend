@@ -153,8 +153,9 @@ class AsyncCSGRequest:
         if not token:
             # Write the token to 'token.txt' asynchronously
             mc.set('csg_token', self.token)
-            if self.first:
-                mc.set('lock', False)
+        if self.first:
+            mc.set('lock', False)
+            logging.info("Lock Deactivated!")
             """ 
             with open('token.txt', 'w') as f:
                 f.write(f"[token-config]\ntoken={self.token}")
