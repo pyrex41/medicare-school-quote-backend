@@ -114,22 +114,12 @@ def map_cat(a_or_b: str):
 
 class AsyncCSGRequest:
     def __init__(self, api_key):
-        time.sleep(random.uniform(0, 1))
-        lock_set = mc.get('lock')
-        if not lock_set:
-            logging.info('setting lock!')
-            mc.set('lock', True)
-            self.first = True
-        else:
-            self.first = False
         self.uri = 'https://csgapi.appspot.com/v1/'
         self.api_key = api_key
         self.token = None  # Will be set asynchronously in an init method
 
     async def async_init(self):
         try:
-            if not self.first:
-                await asyncio.sleep(5)
             token = mc.get('csg_token')
             logging.info(f"Token: {token}")
             await self.set_token(token=token)
@@ -153,14 +143,7 @@ class AsyncCSGRequest:
         if not token:
             # Write the token to 'token.txt' asynchronously
             mc.set('csg_token', self.token)
-        if self.first:
-            mc.set('lock', False)
-            logging.info("Lock Deactivated by first!")
 
-        await asyncio.sleep(random.uniform(15,25))
-        if mc.get('lock'):
-            mc.set('lock', False)
-            logging.warn("Lock was left on !? Deacting using fallback")
             """ 
             with open('token.txt', 'w') as f:
                 f.write(f"[token-config]\ntoken={self.token}")
