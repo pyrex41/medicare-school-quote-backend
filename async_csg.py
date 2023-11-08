@@ -129,7 +129,9 @@ class AsyncCSGRequest:
 
     async def load_token(self):
         # Assuming the token file contains a section [token-config] with a token entry
-        return mc.get('csg_token')
+        token = mc.get('csg_token')
+        logging.info(f"loading token: {token}")
+        return token
         """ 
         parser = configparser.ConfigParser()
         with open(file_name, 'r') as file:
@@ -143,7 +145,7 @@ class AsyncCSGRequest:
         if not token:
             # Write the token to 'token.txt' asynchronously
             mc.set('csg_token', self.token)
-
+            logging.info(f"Setting token: {self.token}")
             """ 
             with open('token.txt', 'w') as f:
                 f.write(f"[token-config]\ntoken={self.token}")
