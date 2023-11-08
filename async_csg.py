@@ -22,19 +22,17 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import csv
 
-from pymemcache.client.base import Client
+import bmemcached
 import os
 
-# Use environment variables provided by Heroku to get the MemCachier credentials
-memcachier_servers = os.environ.get('MEMCACHIER_SERVERS')
-memcachier_username = os.environ.get('MEMCACHIER_USERNAME')
-memcachier_password = os.environ.get('MEMCACHIER_PASSWORD')
+servers = os.environ.get('MEMCACHIER_SERVERS', '').split(',')
+user = os.environ.get('MEMCACHIER_USERNAME', '')
+passw = os.environ.get('MEMCACHIER_PASSWORD', '')
 
-# Split servers into a list and strip whitespace
-servers = [server.strip() for server in memcachier_servers.split(',')]
+mc = bmemcached.Client(servers, username=user, password=passw)
 
-# Create a Memcache client
-client = Client(servers[0], username=memcachier_username, password=memcachier_password)
+mc.enable_retry_delay(True)  # Enabled by default. Sets retry delay to 5s.
+
 
 # Set a value in Memcache
 
@@ -121,7 +119,7 @@ class AsyncCSGRequest:
 
     async def async_init(self):
         try:
-            token = client.get('csg_token')
+            token = mc.get('csg_token')
             await self.set_token(token=token)
         except Exception as e:
             print(f"Could not get token somehow: {e}")
@@ -142,7 +140,7 @@ class AsyncCSGRequest:
         # Token is set, no need to write to a file unless it's a new token
         if not token:
             # Write the token to 'token.txt' asynchronously
-            client.set('csg_token', self.token)
+            mc.set('csg_token', self.token)
             """ 
             with open('token.txt', 'w') as f:
                 f.write(f"[token-config]\ntoken={self.token}")
