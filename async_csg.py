@@ -24,7 +24,6 @@ import csv
 
 import bmemcached
 import os
-import random
 
 servers = os.environ.get('MEMCACHIER_SERVERS', '').split(',')
 user = os.environ.get('MEMCACHIER_USERNAME', '')

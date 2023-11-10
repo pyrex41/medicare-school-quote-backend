@@ -11,6 +11,16 @@ from config import Config
 from pprint import pprint
 import logging
 
+import bmemcached
+import os
+
+servers = os.environ.get('MEMCACHIER_SERVERS', '').split(',')
+user = os.environ.get('MEMCACHIER_USERNAME', '')
+passw = os.environ.get('MEMCACHIER_PASSWORD', '')
+
+mc = bmemcached.Client(servers, username=user, password=passw)
+
+mc.enable_retry_delay(True)  # Enabled by default. Sets retry delay to 5s.
 
 # FastAPI app initialization
 app = FastAPI()
@@ -133,3 +143,13 @@ async def get_plans(zip: int = Query(..., description="ZIP code"),
 
 # The actual implementations of csgRequest, fetch_sheet_and_export_to_csv, and zipHolder
 # should be provided in their respective modules and they should support async/await if used here.
+
+@app.get("/api/csg_token")
+async def get_csg_token():
+    try:
+        csg_token = mc.get('csg_token')
+        if csg_token is None:
+            raise HTTPException(status_code=404, detail="CSG token not found")
+        return {'csg_token': csg_token}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
