@@ -105,7 +105,7 @@ async def get_pdp(zip: int = Query(..., description="ZIP code"),
 
 @app.get("/api/plans")
 async def get_plans(zip: int = Query(..., description="ZIP code"),
-                    county: str = Query(None, description="County"),
+                    county: str = Query(..., description="County"),
                     age: int = Query(..., description="Age"),
                     gender: str = Query(..., description="Gender"),
                     tobacco: bool = Query(..., description="Tobacco usage"),
