@@ -66,9 +66,14 @@ def fetch_sheet_and_export_to_csv():
         
         logging.info("Data successfully written to CSV file")
         pprint("Saved!")
+        return csv_filename
         
     else:
-        logging.error("Header validation failed. The CSV was not saved.")
+        etext = "Header validation failed. The CSV was not saved."
+        logging.error(etext)
+        return etext
+
+
 
 
 
