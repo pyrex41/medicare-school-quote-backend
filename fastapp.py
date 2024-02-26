@@ -158,7 +158,7 @@ async def get_csg_token():
 @app.get("/api/fetch_sheet")
 async def fetch_sheet():
     try:
-        result = await fetch_sheet_and_export_to_csv()
+        result = fetch_sheet_and_export_to_csv()
         return {'result': result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -169,7 +169,7 @@ async def fetch_sheet():
 async def download_csv():
     try:
         # Assuming fetch_sheet_and_export_to_csv() generates "cat.csv"
-        result = await fetch_sheet_and_export_to_csv()
+        result = fetch_sheet_and_export_to_csv()
         return FileResponse(result, media_type="text/csv", filename="cat.csv")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
