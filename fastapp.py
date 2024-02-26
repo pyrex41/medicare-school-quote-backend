@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
@@ -151,5 +152,24 @@ async def get_csg_token():
         if csg_token is None:
             raise HTTPException(status_code=404, detail="CSG token not found")
         return {'csg_token': csg_token}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/fetch_sheet")
+async def fetch_sheet():
+    try:
+        result = await fetch_sheet_and_export_to_csv()
+        return {'result': result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
+@app.get("/api/download_csv")
+async def download_csv():
+    try:
+        # Assuming fetch_sheet_and_export_to_csv() generates "cat.csv"
+        result = await fetch_sheet_and_export_to_csv()
+        return FileResponse(result, media_type="text/csv", filename="cat.csv")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
