@@ -187,15 +187,17 @@ class AsyncCSGRequest:
     async def get(self, uri, params):
         for _ in range(3):  # Retry up to 3 times
             try:
-                async with httpx.AsyncClient(timeout=20.0) as client:  # Increase timeout
+                async with httpx.AsyncClient(timeout=30.0) as client:  # Increase timeout
                     resp = await client.get(uri, params=params, headers=self.GET_headers())
                     if resp.status_code == 403:
                         await self.reset_token()
                         resp = await client.get(uri, params=params, headers=self.GET_headers())
                     resp.raise_for_status()  # Will raise an exception for 4XX and 5XX status codes
+                    logging.info(f"Response: {resp.json()}")
                     return resp.json()
             except ReadTimeout:
                 print("Request timed out. Retrying...")
+        logging.error(f"Request failed after 3 attempts")
         raise Exception("Request failed after 3 attempts")
 
     async def _fetch_pdp(self, zip5):
