@@ -193,7 +193,8 @@ class AsyncCSGRequest:
                         await self.reset_token()
                         resp = await client.get(uri, params=params, headers=self.GET_headers())
                     resp.raise_for_status()  # Will raise an exception for 4XX and 5XX status codes
-                    logging.info(f"Response: {resp.json()}")
+                    response_json = resp.json()
+                    logging.info(f"Response (first 10 items): {dict(list(response_json.items())[:10])}")
                     return resp.json()
             except ReadTimeout:
                 print("Request timed out. Retrying...")
