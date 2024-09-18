@@ -4,3 +4,4 @@ __pycahce__
 __pycache__
 .venv
 .venv_new
+credentials.json
